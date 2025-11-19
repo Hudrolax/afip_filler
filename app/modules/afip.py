@@ -7,10 +7,9 @@ import platform
 import shutil
 import subprocess
 from time import sleep
-from typing import List, Union, Optional
+from typing import List, Optional, Union
 
 from dotenv import load_dotenv
-
 from selenium import webdriver
 from selenium.common.exceptions import TimeoutException, WebDriverException
 from selenium.webdriver.common.by import By
@@ -166,7 +165,7 @@ class AFIP:
         print("start login")
         login_btn = get_element(
             self.driver,
-            '//a[@href="https://auth.afip.gob.ar/contribuyente_/login.xhtml"]',
+            '//a[@href="https://auth.afip.gob.ar/contribuyente_/login.xhtml?action=SYSTEM&system=participacion_ciudadana"]',
         )
         login_btn.click()
         self.driver.switch_to.window(self.driver.window_handles[-1])
@@ -174,16 +173,20 @@ class AFIP:
         print("find username field")
         login_field = get_element(self.driver, '//input[@id="F1:username"]')
         login_field.send_keys(os.getenv("CUIT", ""))
+        sleep(1)
 
         submit_btn = get_element(self.driver, '//input[@id="F1:btnSiguiente"]')
         submit_btn.click()
+        sleep(1)
 
         print("find password field")
         pass_field = get_element(self.driver, '//input[@id="F1:password"]')
         pass_field.send_keys(os.getenv("PASS", ""))
+        sleep(1)
 
         submit_btn = get_element(self.driver, '//input[@id="F1:btnIngresar"]')
         submit_btn.click()
+        sleep(10)
 
     def waiting_for_modal(self):
         try:
@@ -283,9 +286,15 @@ class AFIP:
 
         # подтверждение
         wait = WebDriverWait(self.driver, 10)
-        wait.until(EC.alert_is_present())
-        alert = self.driver.switch_to.alert
-        alert.accept()
+        confirmar_modal_btn = wait.until(
+            EC.element_to_be_clickable(
+                (
+                    By.XPATH,
+                    '//button[contains(@class,"ui-button") and .//span[text()="Confirmar"]]',
+                )
+            )
+        )
+        confirmar_modal_btn.click()
         self.driver.switch_to.default_content()
 
         menu_principal = get_element(self.driver, '//input[@value="Menú Principal"]')
